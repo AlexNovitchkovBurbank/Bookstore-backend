@@ -1,5 +1,6 @@
 using BookstoreAPI.Controllers;
 using BookstoreAPI.Data;
+using BookstoreAPI.Middleware;
 using BookstoreAPI.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -48,6 +49,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors();
+app.UseDatabaseExceptionHandler();  // catches DB errors on all endpoints → 503
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();

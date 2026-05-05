@@ -28,41 +28,41 @@ public class BookService : IBookService
     // ──────────────────────────────────────────
     public async Task<PagedResult<BookResponseDto>> SearchAsync(BookSearchDto dto)
     {
-        IQueryable<Book> query = _db.Books.AsNoTracking();
+        IQueryable<Book> books = _db.Books.AsNoTracking();
 
         // Full-text filter across title, author, ISBN
         if (!string.IsNullOrWhiteSpace(dto.Query))
         {
             var q = dto.Query.ToLower();
-            query = query.Where(b =>
+            books = books.Where(b =>
                 b.Title.ToLower().Contains(q) ||
                 b.Author.ToLower().Contains(q) ||
                 b.ISBN.Contains(q));
         }
 
         if (!string.IsNullOrWhiteSpace(dto.Genre))
-            query = query.Where(b => b.Genre.ToLower() == dto.Genre.ToLower());
+            books = books.Where(b => b.Genre.ToLower() == dto.Genre.ToLower());
 
         if (dto.MinPrice.HasValue)
-            query = query.Where(b => b.Price >= dto.MinPrice.Value);
+            books = books.Where(b => b.Price >= dto.MinPrice.Value);
 
         if (dto.MaxPrice.HasValue)
-            query = query.Where(b => b.Price <= dto.MaxPrice.Value);
+            books = books.Where(b => b.Price <= dto.MaxPrice.Value);
 
         // Sorting
-        query = dto.SortBy?.ToLower() switch
+        books = dto.SortBy?.ToLower() switch
         {
-            "author"        => dto.SortDescending ? query.OrderByDescending(b => b.Author)        : query.OrderBy(b => b.Author),
-            "price"         => dto.SortDescending ? query.OrderByDescending(b => b.Price)         : query.OrderBy(b => b.Price),
-            "publisheddate" => dto.SortDescending ? query.OrderByDescending(b => b.PublishedDate) : query.OrderBy(b => b.PublishedDate),
-            _               => dto.SortDescending ? query.OrderByDescending(b => b.Title)         : query.OrderBy(b => b.Title),
+            "author"        => dto.SortDescending ? books.OrderByDescending(b => b.Author)        : books.OrderBy(b => b.Author),
+            "price"         => dto.SortDescending ? books.OrderByDescending(b => (double)b.Price)         : books.OrderBy(b => (double)b.Price),
+            "publisheddate" => dto.SortDescending ? books.OrderByDescending(b => b.PublishedDate) : books.OrderBy(b => b.PublishedDate),
+            _               => dto.SortDescending ? books.OrderByDescending(b => b.Title)         : books.OrderBy(b => b.Title),
         };
 
-        var totalCount = await query.CountAsync();
+        var totalCount = await books.CountAsync();
         var pageSize   = Math.Clamp(dto.PageSize, 1, 100);
         var page       = Math.Max(dto.Page, 1);
 
-        var items = await query
+        var items = await books
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(b => MapToResponse(b))

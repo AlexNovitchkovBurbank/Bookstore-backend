@@ -34,9 +34,6 @@ public class BooksControllerTests : IClassFixture<BookstoreWebAppFactory>
 
     private async Task<BookResponseDto> CreateBookAsync(CreateBookDto? dto = null)
     {
-
-        var responseToAPI = await _client.GetAsync("/swagger/v1/swagger.json");
-        Console.WriteLine(await responseToAPI.Content.ReadAsStringAsync());
         dto ??= MakeCreateDto();
         var response = await _client.PostAsJsonAsync("/api/books", dto);
         response.EnsureSuccessStatusCode();

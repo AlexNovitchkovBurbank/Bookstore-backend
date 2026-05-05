@@ -33,7 +33,7 @@ public class BookstoreWebAppFactory : WebApplicationFactory<Program>
             if (descriptor is not null)
                 services.Remove(descriptor);
 
-            // Add an SQLite In-memory DB with a unique name per factory instance
+            // use the sqlite in-memory db provider instead of ef core's in memory provider, so that we can test real SQL queries and migrations
             services.AddDbContext<BookstoreDbContext>(options =>
                 options.UseSqlite(_connection));
 
