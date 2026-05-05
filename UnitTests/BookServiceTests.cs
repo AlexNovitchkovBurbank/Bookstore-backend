@@ -1,12 +1,21 @@
 using BookstoreAPI.Data;
+using BookstoreAPI.Middleware;
 using BookstoreAPI.Models;
 using BookstoreAPI.Models.DTOs;
 using BookstoreAPI.Services;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Moq;
 using Xunit;
 
-namespace BookstoreAPI.UnitTests;
+namespace BookstoreAPI.BookServiceTests;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BookService Tests
+// ═══════════════════════════════════════════════════════════════════════════════
 
 /// <summary>
 /// Uses the EF Core In-Memory provider so no real database is needed.
@@ -15,12 +24,12 @@ namespace BookstoreAPI.UnitTests;
 public class BookServiceTests : IDisposable
 {
     private readonly BookstoreDbContext _db;
-    private readonly BookService _sut; // System Under Test
+    private readonly BookService _sut;
 
     public BookServiceTests()
     {
         var options = new DbContextOptionsBuilder<BookstoreDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString()) // isolated per test
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
 
         _db  = new BookstoreDbContext(options);
@@ -39,9 +48,8 @@ public class BookServiceTests : IDisposable
         int stock     = 10)
     {
         var dto = new CreateBookDto(title, author, "978-0000000000", genre, price, stock, "A description.", DateTime.UtcNow.AddYears(-1));
-        return (await _sut.CreateAsync(dto)) is { } r
-            ? await _db.Books.FindAsync(r.Id) ?? throw new InvalidOperationException()
-            : throw new InvalidOperationException();
+        var result = await _sut.CreateAsync(dto);
+        return await _db.Books.FindAsync(result.Id) ?? throw new InvalidOperationException();
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -116,8 +124,8 @@ public class BookServiceTests : IDisposable
         result.Should().NotBeNull();
         result!.Price.Should().Be(24.99m);
         result.StockQuantity.Should().Be(100);
-        result.Title.Should().Be(book.Title);   // unchanged
-        result.Author.Should().Be(book.Author); // unchanged
+        result.Title.Should().Be(book.Title);
+        result.Author.Should().Be(book.Author);
     }
 
     [Fact]
@@ -134,7 +142,7 @@ public class BookServiceTests : IDisposable
         var book = await SeedBookAsync();
         var originalUpdatedAt = book.UpdatedAt;
 
-        await Task.Delay(10); // ensure clock moves
+        await Task.Delay(10);
         await _sut.UpdateAsync(book.Id, new UpdateBookDto("New Title", null, null, null, null, null, null, null));
 
         var updated = await _db.Books.FindAsync(book.Id);
@@ -166,7 +174,7 @@ public class BookServiceTests : IDisposable
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // SearchAsync — query / filtering
+    // SearchAsync — filtering
     // ═══════════════════════════════════════════════════════════════════════════
 
     [Fact]
@@ -291,7 +299,7 @@ public class BookServiceTests : IDisposable
     public async Task Search_Pagination_ReturnsCorrectPage()
     {
         for (var i = 1; i <= 5; i++)
-            await SeedBookAsync($"Book {i:D2}"); // "Book 01" … "Book 05"
+            await SeedBookAsync($"Book {i:D2}");
 
         var page1 = await _sut.SearchAsync(new BookSearchDto(null, null, null, null, "title", false, Page: 1, PageSize: 2));
         var page2 = await _sut.SearchAsync(new BookSearchDto(null, null, null, null, "title", false, Page: 2, PageSize: 2));

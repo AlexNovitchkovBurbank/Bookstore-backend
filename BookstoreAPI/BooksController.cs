@@ -26,7 +26,7 @@ public class BooksController : ControllerBase
         return book is null ? NotFound() : Ok(book);
     }
 
-    // GET api/books/search?query=dune&genre=Fiction&minPrice=5&maxPrice=50&sortBy=price&page=1&pageSize=10
+    // GET api/books/search?books=dune&genre=Fiction&minPrice=5&maxPrice=50&sortBy=price&page=1&pageSize=10
     [HttpGet("search")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> Search([FromQuery] BookSearchDto dto)
