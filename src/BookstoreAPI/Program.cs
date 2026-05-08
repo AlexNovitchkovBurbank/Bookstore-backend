@@ -26,6 +26,8 @@ builder.Services.AddDbContext<BookstoreDbContext>(options =>
 );
 
 builder.Services.AddScoped<IBookService, BookService>();
+builder.Services.AddHttpClient("Anthropic");
+builder.Services.AddScoped<INaturalLanguageSearchService, NaturalLanguageSearchService>();
 
 builder.Services.AddCors(options =>
     options.AddDefaultPolicy(policy =>
